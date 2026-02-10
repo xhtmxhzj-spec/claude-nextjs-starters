@@ -1,0 +1,203 @@
+#!/bin/bash
+
+# create-component: React 컴포넌트 보일러플레이트 생성 커맨드
+# 사용법: create-component <ComponentName>
+# 예시: create-component Button
+
+set -e
+
+# 컴포넌트 이름 입력 확인
+if [ -z "$1" ]; then
+  echo "❌ 에러: 컴포넌트 이름을 입력해주세요"
+  echo "사용법: create-component <ComponentName>"
+  echo "예시: create-component Button"
+  exit 1
+fi
+
+COMPONENT_NAME=$1
+COMPONENT_PATH="components/$COMPONENT_NAME"
+
+# 이미 존재하는지 확인
+if [ -d "$COMPONENT_PATH" ]; then
+  echo "❌ 에러: $COMPONENT_PATH 폴더가 이미 존재합니다"
+  exit 1
+fi
+
+# 폴더 생성
+mkdir -p "$COMPONENT_PATH"
+echo "✅ 폴더 생성: $COMPONENT_PATH"
+
+# types.ts 생성
+cat > "$COMPONENT_PATH/types.ts" << 'EOF'
+// 컴포넌트 Props 인터페이스
+export interface ${COMPONENT_NAME}Props {
+  /**
+   * 컴포넌트 설명을 작성하세요
+   * @example "Primary"
+   */
+  variant?: 'primary' | 'secondary' | 'outline';
+
+  /**
+   * 크기 설정
+   * @example "md"
+   */
+  size?: 'sm' | 'md' | 'lg';
+
+  /**
+   * 비활성화 상태
+   * @default false
+   */
+  disabled?: boolean;
+
+  /**
+   * 클래스명 추가
+   */
+  className?: string;
+
+  /**
+   * 자식 요소
+   */
+  children?: React.ReactNode;
+}
+EOF
+
+# ${COMPONENT_NAME} 치환
+sed -i "s/\${COMPONENT_NAME}/$COMPONENT_NAME/g" "$COMPONENT_PATH/types.ts"
+
+echo "✅ 파일 생성: $COMPONENT_PATH/types.ts"
+
+# 컴포넌트 파일 생성
+cat > "$COMPONENT_PATH/$COMPONENT_NAME.tsx" << 'EOF'
+'use client';
+
+import React, { FC, useMemo } from 'react';
+import PropTypes from 'prop-types';
+import { ${COMPONENT_NAME}Props } from './types';
+
+/**
+ * ${COMPONENT_NAME} 컴포넌트
+ *
+ * 반응형 디자인 지원:
+ * - 모바일 (기본): 100% 너비
+ * - 태블릿 (md): 컨테이너 너비
+ * - 데스크톱 (lg): 최대 너비 제한
+ *
+ * @example
+ * <${COMPONENT_NAME} variant="primary" size="md">
+ *   클릭하세요
+ * </${COMPONENT_NAME}>
+ */
+const ${COMPONENT_NAME}: FC<${COMPONENT_NAME}Props> = ({
+  variant = 'primary',
+  size = 'md',
+  disabled = false,
+  className = '',
+  children,
+}) => {
+  // 스타일 클래스 최적화
+  const styleClasses = useMemo(() => {
+    const baseClasses = [
+      'transition-all duration-200 ease-in-out',
+      'font-medium rounded-lg',
+      'focus:outline-none focus:ring-2 focus:ring-offset-2',
+      disabled && 'opacity-50 cursor-not-allowed',
+    ];
+
+    // 변형 스타일
+    const variantClasses = {
+      primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500',
+      secondary: 'bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500',
+      outline: 'border border-gray-300 text-gray-900 hover:bg-gray-50 focus:ring-gray-500',
+    };
+
+    // 크기 스타일
+    const sizeClasses = {
+      sm: 'px-3 py-1.5 text-sm',
+      md: 'px-4 py-2 text-base',
+      lg: 'px-6 py-3 text-lg',
+    };
+
+    // 반응형 스타일
+    const responsiveClasses = [
+      'w-full sm:w-auto', // 모바일에서 전체 너비, 태블릿 이상에서 자동
+      'md:px-5 md:py-2.5', // 태블릿에서 패딩 조정
+      'lg:px-6 lg:py-3', // 데스크톱에서 패딩 조정
+    ];
+
+    return [
+      baseClasses.filter(Boolean).join(' '),
+      variantClasses[variant],
+      sizeClasses[size],
+      responsiveClasses.join(' '),
+      className,
+    ]
+      .filter(Boolean)
+      .join(' ');
+  }, [variant, size, disabled, className]);
+
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      className={styleClasses}
+      aria-disabled={disabled}
+    >
+      {children}
+    </button>
+  );
+};
+
+// Props 검증
+${COMPONENT_NAME}.propTypes = {
+  variant: PropTypes.oneOf(['primary', 'secondary', 'outline']),
+  size: PropTypes.oneOf(['sm', 'md', 'lg']),
+  disabled: PropTypes.bool,
+  className: PropTypes.string,
+  children: PropTypes.node,
+};
+
+// 기본값 설정
+${COMPONENT_NAME}.defaultProps = {
+  variant: 'primary',
+  size: 'md',
+  disabled: false,
+  className: '',
+  children: null,
+};
+
+export default ${COMPONENT_NAME};
+EOF
+
+sed -i "s/\${COMPONENT_NAME}/$COMPONENT_NAME/g" "$COMPONENT_PATH/$COMPONENT_NAME.tsx"
+
+echo "✅ 파일 생성: $COMPONENT_PATH/$COMPONENT_NAME.tsx"
+
+# index.ts 생성 (Export 파일)
+cat > "$COMPONENT_PATH/index.ts" << 'EOF'
+export { default as ${COMPONENT_NAME} } from './${COMPONENT_NAME}';
+export type { ${COMPONENT_NAME}Props } from './types';
+EOF
+
+sed -i "s/\${COMPONENT_NAME}/$COMPONENT_NAME/g" "$COMPONENT_PATH/index.ts"
+
+echo "✅ 파일 생성: $COMPONENT_PATH/index.ts"
+
+# 완료 메시지
+echo ""
+echo "🎉 $COMPONENT_NAME 컴포넌트 생성 완료!"
+echo ""
+echo "📂 생성된 파일:"
+echo "   • $COMPONENT_PATH/$COMPONENT_NAME.tsx"
+echo "   • $COMPONENT_PATH/types.ts"
+echo "   • $COMPONENT_PATH/index.ts"
+echo ""
+echo "📝 다음 단계:"
+echo "   1. 타입 정의 수정: $COMPONENT_PATH/types.ts"
+echo "   2. 컴포넌트 로직 구현: $COMPONENT_PATH/$COMPONENT_NAME.tsx"
+echo "   3. 사용: import { $COMPONENT_NAME } from '@/components/$COMPONENT_NAME';"
+echo ""
+echo "🎨 Tailwind CSS 반응형 클래스:"
+echo "   • sm: 640px (모바일 태블릿)"
+echo "   • md: 768px (태블릿)"
+echo "   • lg: 1024px (데스크톱)"
+echo "   • xl: 1280px (와이드 데스크톱)"
