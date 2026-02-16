@@ -19,7 +19,11 @@
       "Bash(.claude/commands/create-component:*)",
       "Bash(npm ls:*)",
       "Bash(~/.local/bin/jq.exe --version)",
-      "Bash(jq:*)"
+      "Bash(jq:*)",
+      "Bash(node --version:*)",
+      "Bash(npm --version:*)",
+      "Bash(npx:*)",
+      "Bash(claude mcp add github npx -y @modelcontextprotocol/server-github)"
     ]
   },
   "hooks": {
