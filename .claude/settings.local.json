@@ -16,7 +16,23 @@
       "Bash(npm run dev:*)",
       "Bash(git push:*)",
       "Bash(chmod:*)",
-      "Bash(.claude/commands/create-component:*)"
+      "Bash(.claude/commands/create-component:*)",
+      "Bash(npm ls:*)",
+      "Bash(~/.local/bin/jq.exe --version)",
+      "Bash(jq:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path' | { read file_path; if echo \"$file_path\" | grep -q '\\\\.ts$'; then npx prettier --write \"$file_path\"; fi; }"
+          }
+        ]
+      }
     ]
   }
 }
